@@ -1,47 +1,56 @@
 package main
 
 type DequeFunc interface {
-	PushFront(string)
-	PushBack(string)
-	PopFront() (string, bool)
-	PopBack() (string, bool)
+	PushFront(byte)
+	PushBack(byte)
+	PopFront() (byte, bool)
+	PopBack() (byte, bool)
+	StringItem() []string
 }
 
 type Deque struct {
-	item []string
+	item []byte
 }
 
 var _ DequeFunc = (*Deque)(nil)
 
-func (d *Deque) PushFront(item string) {
-	d.item = append([]string{item}, d.item...)
+func (d *Deque) PushFront(item byte) {
+	d.item = append([]byte{item}, d.item...)
 }
 
-func (d *Deque) PushBack(item string) {
+func (d *Deque) PushBack(item byte) {
 	d.item = append(d.item, item)
 }
 
-func (d *Deque) PopFront() (string, bool) {
+func (d *Deque) PopFront() (byte, bool) {
 	if len(d.item) == 0 {
-		return "", false
+		return ' ', false
 	}
 	frontEle := d.item[0]
 	d.item = d.item[1:]
 	return frontEle, true
 }
 
-func (d *Deque) PopBack() (string, bool) {
+func (d *Deque) PopBack() (byte, bool) {
 	if len(d.item) == 0 {
-		return "", false
+		return ' ', false
 	}
 	rearEle := d.item[len(d.item)-1]
 	d.item = d.item[:len(d.item)-1]
 	return rearEle, true
 }
 
+func (d *Deque) StringItem() []string {
+	var tmp []string
+	for _, v := range d.item {
+		tmp = append(tmp, string(v))
+	}
+	return tmp
+}
+
 func newDeque(length int) *Deque {
 	return &Deque{
-		item: make([]string, length),
+		item: make([]byte, length),
 	}
 }
 
