@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestDeque_PushBack(t *testing.T) {
 	dq := newDeque(10)
@@ -8,7 +11,7 @@ func TestDeque_PushBack(t *testing.T) {
 	dq.PushBack('2')
 	dq.PushBack('3')
 	dq.PushBack('0')
-	for k, v := range dq.String() {
+	for k, v := range dq.StringItem() {
 		t.Log(k, v)
 	}
 }
@@ -52,4 +55,106 @@ func TestDeque_PopFront(t *testing.T) {
 	t.Log(s)
 }
 
+func TestNewStream(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+
+	if stream.capacitySize != 10 {
+		t.Errorf("Expected capacitySize to be 10, got %d", stream.capacitySize)
+	}
+
+	if stream.writtenSize != 0 {
+		t.Errorf("Expected writtenSize to be 0, got %d", stream.writtenSize)
+	}
+
+	if stream.readSize != 0 {
+		t.Errorf("Expected readSize to be 0, got %d", stream.readSize)
+	}
+
+	if stream.endInput {
+		t.Errorf("Expected endInput to be false, got %v", stream.endInput)
+	}
+
+	if stream.error {
+		t.Errorf("Expected error to be false, got %v", stream.error)
+	}
+}
+
+func TestWrite(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+	data := "hello"
+
+	n := stream.Write(data)
+
+	if n != len(data) {
+		t.Errorf("Expected written length to be %d, got %d", len(data), n)
+	}
+
+	if stream.writtenSize != len(data) {
+		t.Errorf("Expected writtenSize to be %d, got %d", len(data), stream.writtenSize)
+	}
+
+	if stream.BufferSize() != len(data) {
+		t.Errorf("Expected buffer size to be %d, got %d", len(data), stream.BufferSize())
+	}
+}
+
+func TestPeekOutput(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+	data := "hello"
+	stream.Write(data)
+
+	output := fmt.Sprintf("%s", stream.PeekOutput(3))
+	expected := "hel"
+
+	if output != expected {
+		t.Errorf("Expected output to be %s, got %s", expected, output)
+	}
+}
+
+func TestRead(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+	data := "hello"
+	stream.Write(data)
+
+	readData := fmt.Sprintf("%s", stream.Read(3))
+	expected := "hel"
+
+	if readData != expected {
+		t.Errorf("Expected read data to be %s, got %s", expected, readData)
+	}
+
+	if stream.BytesRead() != 3 {
+		t.Errorf("Expected bytes read to be 3, got %d", stream.BytesRead())
+	}
+
+	if stream.BufferSize() != 2 {
+		t.Errorf("Expected buffer size to be 2, got %d", stream.BufferSize())
+	}
+}
+
+func TestEndInput(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+	stream.EndInput()
+
+	if !stream.InputEnded() {
+		t.Errorf("Expected input to be ended, got %v", stream.InputEnded())
+	}
+}
+
+func TestSetError(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+	stream.SetError()
+
+	if !stream.Errors() {
+		t.Errorf("Expected error to be true, got %v", stream.Errors())
+	}
+}
+
 //go test -run={func Name} -cover -v ./
+// for all go test -v
