@@ -136,16 +136,88 @@ func TestRead(t *testing.T) {
 	}
 }
 
-func TestEndInput(t *testing.T) {
+// Test sequential write and read
+func TestSequentialWriteAndRead(t *testing.T) {
 	q := Deque{}
 	stream := NewStream(q, 10, 0, 0, false, false)
-	stream.EndInput()
+	data := "hello"
 
-	if !stream.InputEnded() {
-		t.Errorf("Expected input to be ended, got %v", stream.InputEnded())
+	n := stream.Write(data)
+	if n != len(data) {
+		t.Errorf("Expected written length to be %d, got %d", len(data), n)
+	}
+
+	readData := stream.Read(len(data))
+	if readData != data {
+		t.Errorf("Expected read data to be %s, got %s", data, readData)
 	}
 }
 
+// Test end input and EOF detection
+func TestEndInputAndEOF(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 10, 0, 0, false, false)
+	data := "hello"
+
+	stream.Write(data)
+	stream.EndInput()
+
+	if !stream.InputEnded() {
+		t.Errorf("Expected input to be ended")
+	}
+
+	readData := stream.Read(len(data))
+	if readData != data {
+		t.Errorf("Expected read data to be %s, got %s", data, readData)
+	}
+
+	if !stream.EOF() {
+		t.Errorf("Expected EOF to be true")
+	}
+}
+
+// Test flow control
+func TestFlowControl(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 5, 0, 0, false, false)
+	data := "hello"
+
+	n := stream.Write(data)
+	if n != 5 {
+		t.Errorf("Expected written length to be 5, got %d", n)
+	}
+
+	m := stream.Write("world")
+	if m != 0 {
+		t.Errorf("Expected written length to be 0, got %d", m)
+	}
+
+	stream.Read(3)
+	n = stream.Write("world")
+	if n != 3 {
+		t.Errorf("Expected written length to be 3, got %d", n)
+	}
+}
+
+// Test long byte stream
+func TestLongByteStream(t *testing.T) {
+	q := Deque{}
+	stream := NewStream(q, 1, 0, 0, false, false)
+	data := "hello"
+
+	n := stream.Write(data)
+	if n != 1 {
+		t.Errorf("Expect write data to be 0,got %d", n)
+	}
+
+	readData := stream.Read(1)
+
+	if readData != string(data[0]) {
+		t.Errorf("Expected read data to be %s, got %s", data, readData)
+	}
+}
+
+// Test the SetError and Errors functions
 func TestSetError(t *testing.T) {
 	q := Deque{}
 	stream := NewStream(q, 10, 0, 0, false, false)

@@ -101,10 +101,13 @@ func NewStream(q Deque, capacitySize, writtenSize, readSize int, endInput, error
 }
 
 func (stream *Stream) Write(data string) int {
-	if stream.error {
+	if stream.error || stream.endInput {
 		return 0
 	}
-	writeSize := min(len(data), stream.capacitySize) - len(stream.q.item)
+	writeSize := min(len(data), stream.RemainingCapacity())
+	if writeSize == 0 {
+		return 0
+	}
 	stream.writtenSize += writeSize
 	for i := 0; i < writeSize; i++ {
 		stream.q.PushBack(data[i])
