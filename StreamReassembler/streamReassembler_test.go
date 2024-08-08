@@ -2,7 +2,6 @@ package StreamReassembler
 
 import (
 	"lab/stream"
-	"reflect"
 	"testing"
 )
 
@@ -134,110 +133,76 @@ func TestPushSubString(t *testing.T) {
 	}
 }
 
-func newStreamReassembler(m map[int]string, next, num, eof, capacity int) (*StreamReassembler, *stream.Stream) {
-	strm := stream.NewStream(stream.Deque{}, capacity, 0, 0, false, false)
-	reassembler := New(m, next, num, eof, strm, capacity)
-	return reassembler, strm
+func newStreamReassembler(next, num, eof int, data map[int]string, capacity int) *StreamReassembler {
+	stream := stream.NewStream(stream.Deque{}, capacity, 0, 0, false, false)
+	d := "hello peter"
+	stream.Write(d)
+	return NewStreamReassembler(capacity, stream)
 }
 
-func TestStreamReassembler(t *testing.T) {
-	tests := []struct {
-		initialMap map[int]string
-		operations []struct {
-			data  string
-			index int
-			eof   bool
-		}
-		expectedOutput string
-		expectedMap    map[int]string // Expected internal map state
-	}{
-		{
-			initialMap: map[int]string{},
-			operations: []struct {
-				data  string
-				index int
-				eof   bool
-			}{
-				{"hello", 0, false},
-				{" world", 5, false},
-			},
-			expectedOutput: "hello world",
-			expectedMap:    map[int]string{}, // After processing, the map should be empty
-		},
-		{
-			initialMap: map[int]string{},
-			operations: []struct {
-				data  string
-				index int
-				eof   bool
-			}{
-				{"abc", 0, false},
-				{"def", 3, false},
-				{"ghi", 6, true},
-			},
-			expectedOutput: "abcdefghi",
-			expectedMap:    map[int]string{}, // After processing, the map should be empty
-		},
-		{
-			initialMap: map[int]string{},
-			operations: []struct {
-				data  string
-				index int
-				eof   bool
-			}{
-				{"part1", 0, false},
-				{"part2", 5, false},
-				{"part3", 10, true},
-				{"extra", 15, false},
-			},
-			expectedOutput: "part1part2part3",
-			expectedMap: map[int]string{
-				15: "extra",
-			}, // Extra data remains in the map
-		},
-		{
-			initialMap: map[int]string{},
-			operations: []struct {
-				data  string
-				index int
-				eof   bool
-			}{
-				{"start", 0, false},
-				{"end", 5, true},
-				{"middle", 3, false},
-			},
-			expectedOutput: "startmiddleend",
-			expectedMap: map[int]string{
-				8: "end", // The 'end' part is still there due to overlapping
-			},
-		},
+func TestStreamReassembler_NormalInsertion(t *testing.T) {
+	reassembler := newStreamReassembler(0, 0, -1, make(map[int]string), 20)
+	t.Log(reassembler.outPut.Read(10))
+	reassembler.unassembleStrs = map[int]string{
+		1: "hello",
+		2: "hey",
+		3: "hi",
+		6: "world",
+	}
+	reassembler.PushSubString("hello", 0, false)
+	//reassembler.PushSubString("world", 5, true)
+
+	out := reassembler.StreamOut()
+	output := out.Read(5)
+	expectedOutput := "hello"
+	if output != expectedOutput {
+		t.Errorf("Expected '%s' but got '%s'", expectedOutput, output)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.expectedOutput, func(t *testing.T) {
-			reassembler, strm := newStreamReassembler(tt.initialMap, 0, 0, -1, 100) // Adjust capacity as needed
+	if reassembler.UnassembledBytes() != 0 {
+		t.Errorf("Expected 0 unassembled bytes but got %d", reassembler.UnassembledBytes())
+	}
+}
 
-			for _, op := range tt.operations {
-				reassembler.PushSubString(op.data, op.index, op.eof)
-			}
+type MockStream struct {
+	data []byte
+}
 
-			// Read the result from the stream
-			output := strm.Read(len(tt.expectedOutput))
+func (s *MockStream) Write(data []byte) int {
+	writeLen := len(data)
+	if writeLen > len(s.data) {
+		writeLen = len(s.data)
+	}
+	copy(s.data[:writeLen], data)
+	return writeLen
+}
 
-			// Check the result
-			if output != tt.expectedOutput {
-				t.Errorf("Expected %s but got %s", tt.expectedOutput, output)
-			}
+func (s *MockStream) BufferSize() int {
+	return len(s.data)
+}
 
-			// Check if the buffer size is as expected after operations
-			if strm.BufferSize() != len(tt.expectedOutput) {
-				t.Errorf("Buffer size is incorrect, got %d, expected %d", strm.BufferSize(), len(tt.expectedOutput))
-			}
+func (s *MockStream) EndInput() {
+	// End of input logic here
+}
 
-			// Check the internal map state of unassembleStrs
-			if !reflect.DeepEqual(reassembler.unassembleStrs, tt.expectedMap) {
-				t.Errorf("Expected unassembleStrs %v but got %v", tt.expectedMap, reassembler.unassembleStrs)
-			}
-		})
+func TestStreamReassembler_Normal(t *testing.T) {
+	out := stream.NewStream(stream.Deque{}, 40, 0, 0, false, false)
+	reassembler := NewStreamReassembler(20, out)
+	reassembler.unassembleStrs = map[int]string{
+		1: "hello world",
+		2: "hey",
+		3: "hi",
+		6: "world",
+	}
+	reassembler.PushSubString("hello world", 0, false)
+	reassembler.PushSubString("peter", 3, false)
+
+	expectedOutput := "hello world"
+	gotOutput := out.Read(12)
+	if gotOutput != expectedOutput {
+		t.Errorf("Expected '%s' but got '%s'", expectedOutput, gotOutput)
+	}
+	if reassembler.unassebledBytesNum != 0 {
+		t.Errorf("Expected unassembled bytes to be 0 but got %d", reassembler.unassebledBytesNum)
 	}
 }
