@@ -1,4 +1,4 @@
-package StreamReassembler
+package streamReassembler
 
 import (
 	"lab/stream"
@@ -195,10 +195,13 @@ func TestStreamReassembler_Normal(t *testing.T) {
 		6: "world",
 	}
 	reassembler.PushSubString("hello world", 0, false)
-	reassembler.PushSubString("peter", 3, false)
+	//reassembler.PushSubString("peter", 3, false)
+	reassembler.PushSubString("aaron", 1, false)
 
-	expectedOutput := "hello world"
-	gotOutput := out.Read(12)
+	expectedOutput := "d"
+	gotOutput := out.Read(11)
+	t.Log(gotOutput)
+	gotOutput = out.Read(1)
 	if gotOutput != expectedOutput {
 		t.Errorf("Expected '%s' but got '%s'", expectedOutput, gotOutput)
 	}

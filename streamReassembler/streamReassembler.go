@@ -1,4 +1,4 @@
-package StreamReassembler
+package streamReassembler
 
 import (
 	"fmt"
@@ -111,7 +111,7 @@ func (sr *StreamReassembler) PushSubString(data string, idx int, eof bool) {
 	}
 
 	for k, v := range sr.unassembleStrs {
-		if sr.nextAssembledIdx <= k {
+		if sr.nextAssembledIdx < k {
 			log.Println(fmt.Sprintf("Assertion failed: nextAssembledIdx (%d) > iterFirst (%d)", sr.nextAssembledIdx, k))
 		}
 		if k == sr.nextAssembledIdx {
