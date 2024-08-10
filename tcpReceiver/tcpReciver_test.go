@@ -1,1 +1,1 @@
-package tcpReciver
+package tcpReceiver
