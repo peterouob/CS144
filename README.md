@@ -3,8 +3,8 @@
 ### StreamAssembler
 ### TCP Receiver
 - [ ] tcp_segment
-  - [ ] buffer
-  - [ ] tcpHeader
-    - [ ] parser
+  - [x] buffer
+  - [ 65] tcpHeader
+    - [x] parser
       - [x] buffer
     - [x] wrappingIntergers
