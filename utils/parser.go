@@ -100,3 +100,19 @@ func (n *NetParser[T]) RemovePrefix(len int) {
 	}
 	n.buffer.RemovePrefix(len)
 }
+
+type NetUnparserInterface[T uint32 | uint16 | uint8] interface {
+	UnparseInt(string, T, int) string
+}
+
+type NetUnparser[T uint32 | uint16 | uint8] struct{}
+
+var _ NetUnparserInterface[uint32] = (*NetUnparser[uint32])(nil)
+
+func (nu *NetUnparser[T]) UnparseInt(s string, val T, n int) string {
+	for i := 0; i < n; i++ {
+		theByte := byte((val >> uint((n-i-1)*8)) & 0xff)
+		s += string(theByte)
+	}
+	return s
+}
