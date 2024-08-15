@@ -1,6 +1,7 @@
 package wrapping
 
 type WrappingInt32Interface interface {
+	SetRawValue(uint32) *WrappingInt32
 	RawValue() uint32
 	Wrap(uint64, WrappingInt32) WrappingInt32
 	UnWrap(WrappingInt32, WrappingInt32, uint64) uint64
@@ -12,6 +13,14 @@ type WrappingInt32 struct {
 
 var _ WrappingInt32Interface = (*WrappingInt32)(nil)
 
+func NewWrrappingInt32() *WrappingInt32 {
+	return &WrappingInt32{rawValue: 0}
+}
+
+func (w *WrappingInt32) SetRawValue(v uint32) *WrappingInt32 {
+	w.rawValue = v
+	return w
+}
 func (w *WrappingInt32) RawValue() uint32 { return w.rawValue }
 func (w *WrappingInt32) Wrap(n uint64, isn WrappingInt32) WrappingInt32 {
 	return WrappingInt32{rawValue: isn.rawValue + uint32(n)}
