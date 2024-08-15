@@ -3,6 +3,7 @@ package tcp_helper
 import (
 	"lab/utils"
 	"lab/wrapping"
+	"unsafe"
 )
 
 const TCPHeaderLENGTH = 20
@@ -34,20 +35,20 @@ type TCPHeaderInterface[T uint32 | uint16 | uint8] interface {
 //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 type TCPHeader[T uint32 | uint16 | uint8] struct {
-	sport uint16
-	dport uint16
+	sport T
+	dport T
 	seqno wrapping.WrappingInt32
 	ackno wrapping.WrappingInt32
-	doff  uint8
+	doff  T
 	urg   bool
 	ack   bool
 	psh   bool
 	rst   bool
 	syn   bool
 	fin   bool
-	win   uint16
-	cksum uint16
-	uptr  uint16
+	win   T
+	cksum T
+	uptr  T
 }
 
 var _ TCPHeaderInterface[uint32] = (*TCPHeader[uint32])(nil)
@@ -71,7 +72,38 @@ func NewTcpHeader[T uint32 | uint16 | uint8]() *TCPHeader[T] {
 	}
 }
 
-func (t *TCPHeader[T]) Parse(p utils.NetParser[T]) utils.ParseResult {}
-func (t *TCPHeader[T]) Serialize() string                            {}
-func (t *TCPHeader[T]) ToString() string                             {}
-func (t *TCPHeader[T]) Summary() string                              {}
+func (t *TCPHeader[T]) Parse(p utils.NetParser[T]) utils.ParseResult {
+	t.sport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.dport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	seqno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
+	ackno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
+	wrappingInt32 := wrapping.WrappingInt32{}
+	t.seqno = *(wrappingInt32.SetRawValue(uint32(seqno)))
+	t.ackno = *(wrappingInt32.SetRawValue(uint32(ackno)))
+	t.doff = p.ParseInt(int(unsafe.Sizeof(uint8(0)))) >> 4
+	f := p.ParseInt(int(unsafe.Sizeof(uint8(0))))
+
+	t.urg = f&0b00100000 != 0
+	t.ack = f&0b00010000 != 0
+	t.psh = f&0b00001000 != 0
+	t.rst = f&0b00000100 != 0
+	t.syn = f&0b00000010 != 0
+	t.fin = f&0b00000001 != 0
+
+	t.win = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.cksum = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.uptr = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+
+	if t.doff < 5 {
+		return utils.PacketTooShort
+	}
+
+	p.RemovePrefix(int(t.doff*4 - TCPHeaderLENGTH))
+	if p.Error() {
+		return p.GetError()
+	}
+	return utils.NoError
+}
+func (t *TCPHeader[T]) Serialize() string { return "" }
+func (t *TCPHeader[T]) ToString() string  { return "" }
+func (t *TCPHeader[T]) Summary() string   { return "" }
