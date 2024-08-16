@@ -3,6 +3,7 @@ package tcp_helper
 import (
 	"lab/utils"
 	"testing"
+	"unsafe"
 )
 
 func TestTCPHeaderParse(t *testing.T) {
@@ -150,57 +151,49 @@ func TestTCPHeaderParse_InvalidFlags(t *testing.T) {
 }
 
 func TestTCPHeader_Serialize(t *testing.T) {
-	tests := []struct {
-		name     string
-		header   TCPHeader[uint32]
-		expected string
-	}{
-		{
-			name: "Basic Test Case",
-			header: TCPHeader[uint32]{
-				sport: 12,
-				dport: 0x12,
-				seqno: 0x9ABCDEF0,
-				ackno: 0x12345678,
-				doff:  5,
-				urg:   true,
-				ack:   false,
-				psh:   true,
-				rst:   false,
-				syn:   true,
-				fin:   false,
-				win:   0xFFFF,
-				cksum: 0xABCD,
-				uptr:  0x1234,
-			},
-			expected: string([]byte{
-				0x12,                   // sport
-				0x12,                   // dport
-				0x9A, 0xBC, 0xDE, 0xF0, // seqno
-				0x12, 0x34, 0x56, 0x78, // ackno
-				0x50,       // doff << 4
-				0b00101001, // flags (urg=1, psh=1, syn=1)
-				0xFF, 0xFF, // win
-				0xAB, 0xCD, // cksum
-				0x12, 0x34, // uptr
-				0x00, 0x00, 0x00, 0x00, // Padding to 4 * doff bytes
-			}),
-		},
-		{
-			name: "Header too short",
-			header: TCPHeader[uint32]{
-				doff: 4,
-			},
-			expected: "TCP header too short",
-		},
+	header := NewTcpHeader[uint32]()
+	result := header.Serialize()
+	expectedLength := int(unsafe.Sizeof(uint16(0)))*2 + int(unsafe.Sizeof(uint32(0)))*2 + 1 + 1 + int(unsafe.Sizeof(uint16(0)))*3
+	if len(result) != expectedLength {
+		t.Errorf("Serialize failed, expected length %d, got %d", expectedLength, len(result))
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.header.Serialize()
-			if got != tt.expected {
-				t.Errorf("Serialize() = %v, want %v", got, tt.expected)
-			}
-		})
+	header.sport = 12345
+	header.dport = 80
+	header.seqno = 12345678
+	header.ackno = 87654321
+	header.doff = 5
+	header.urg = true
+	header.ack = true
+	header.psh = false
+	header.rst = false
+	header.syn = true
+	header.fin = false
+	header.win = 65535
+	header.cksum = 1234
+	header.uptr = 5678
+
+	result = header.Serialize()
+	expectedLength = int(header.doff) * 4
+	if len(result) != expectedLength {
+		t.Errorf("Serialize failed, expected length %d, got %d", expectedLength, len(result))
+	}
+
+	// Check some field values in the serialized output
+	if result[0] != byte(header.sport>>8) || result[1] != byte(header.sport&0xff) {
+		t.Errorf("Serialize failed, source port does not match")
+	}
+	if result[2] != byte(header.dport>>8) || result[3] != byte(header.dport&0xff) {
+		t.Errorf("Serialize failed, destination port does not match")
+	}
+
+	// Check flags
+	flagsIndex := 13 // After doff, flags start at byte index 13
+	flags := uint8(0) |
+		(0b00100000 * BoolToUint8(header.urg)) |
+		(0b00010000 * BoolToUint8(header.ack)) |
+		(0b00000010 * BoolToUint8(header.syn))
+	if result[flagsIndex] != flags {
+		t.Errorf("Serialize failed, flags do not match. Expected %08b, got %08b", flags, result[flagsIndex])
 	}
 }

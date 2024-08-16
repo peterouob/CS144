@@ -114,7 +114,7 @@ var _ NetUnparserInterface[uint32] = (*NetUnparser[uint32])(nil)
 func (nu *NetUnparser[T]) UnparseInt(ret *[]byte, val T, n int) {
 	for i := 0; i < n; i++ {
 		theByte := byte((val >> ((n - i - 1) * 8)) & 0xff)
-		log.Println("theByte = ", theByte)
+		log.Printf("theByte = %d,ret = %+v,size_t = %d", theByte, ret, n)
 		*ret = append(*ret, theByte)
 	}
 }

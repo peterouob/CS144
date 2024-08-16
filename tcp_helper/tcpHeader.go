@@ -75,10 +75,10 @@ func NewTcpHeader[T uint32 | uint16 | uint8]() *TCPHeader[T] {
 }
 
 func (t *TCPHeader[T]) Parse(p utils.NetParser[T]) utils.ParseResult {
-	t.sport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.sport = p.ParseInt(int(unsafe.Sizeof(uint16(0)))) // 2
 	t.dport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
 
-	seqno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
+	seqno := p.ParseInt(int(unsafe.Sizeof(uint32(0)))) // 4
 	ackno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
 
 	wrappingInt32 := wrapping.WrappingInt32{}
@@ -122,25 +122,31 @@ func (t *TCPHeader[T]) Serialize() string {
 	unparser.UnparseInt(&ret, T(t.seqno), int(unsafe.Sizeof(uint32(0))))
 	unparser.UnparseInt(&ret, T(t.ackno), int(unsafe.Sizeof(uint32(0))))
 	unparser.UnparseInt(&ret, t.doff<<4, int(unsafe.Sizeof(uint8(0))))
-	flags := uint8((0b00100000 * boolToUint8(t.urg)) |
-		(0b00010000 * boolToUint8(t.ack)) |
-		(0b00001000 * boolToUint8(t.psh)) |
-		(0b00000100 * boolToUint8(t.rst)) |
-		(0b00000010 * boolToUint8(t.syn)) |
-		(0b00000001 * boolToUint8(t.fin)))
+	flags := (0b00100000 * BoolToUint8(t.urg)) |
+		(0b00010000 * BoolToUint8(t.ack)) |
+		(0b00001000 * BoolToUint8(t.psh)) |
+		(0b00000100 * BoolToUint8(t.rst)) |
+		(0b00000010 * BoolToUint8(t.syn)) |
+		(0b00000001 * BoolToUint8(t.fin))
 	unparser.UnparseInt(&ret, T(flags), int(unsafe.Sizeof(uint8(0))))
 	unparser.UnparseInt(&ret, t.win, int(unsafe.Sizeof(uint16(0))))
 	unparser.UnparseInt(&ret, t.cksum, int(unsafe.Sizeof(uint16(0))))
 	unparser.UnparseInt(&ret, t.uptr, int(unsafe.Sizeof(uint16(0))))
-	if T(len(ret)) > 4*t.doff {
-		ret = append(ret, make([]byte, 4*t.doff-T(len(ret)))...)
+	//ret = append(ret, make([]byte, 4*t.doff-T(len(ret)))...)
+	if cap(ret) >= int(t.doff<<4) {
+		ret = ret[:4*t.doff]
+	} else {
+		newRet := make([]byte, 4*t.doff)
+		copy(newRet, ret)
+		ret = newRet
 	}
+	log.Printf("ret size = %d", len(ret))
 	log.Printf("0x = %+v \n s = %s \n the header struct = %v", ret, fmt.Sprintf("%s", ret), t)
 	return string(ret)
 }
 func (t *TCPHeader[T]) ToString() string { return "" }
 func (t *TCPHeader[T]) Summary() string  { return "" }
-func boolToUint8(b bool) uint8 {
+func BoolToUint8(b bool) uint8 {
 	if b {
 		return 1
 	}

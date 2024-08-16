@@ -1,5 +1,7 @@
 package wrapping
 
+import "log"
+
 type WrappingInt32Interface interface {
 	SetRawValue(uint32) *WrappingInt32
 	RawValue() uint32
@@ -13,12 +15,13 @@ type WrappingInt32 struct {
 
 var _ WrappingInt32Interface = (*WrappingInt32)(nil)
 
-func NewWrrappingInt32() *WrappingInt32 {
+func NewWrrappingInt32(v int) *WrappingInt32 {
 	return &WrappingInt32{rawValue: 0}
 }
 
 func (w *WrappingInt32) SetRawValue(v uint32) *WrappingInt32 {
 	w.rawValue = v
+	log.Println("raw value =", w.rawValue)
 	return w
 }
 func (w *WrappingInt32) RawValue() uint32 { return w.rawValue }
