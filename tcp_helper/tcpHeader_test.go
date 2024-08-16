@@ -197,3 +197,48 @@ func TestTCPHeader_Serialize(t *testing.T) {
 		t.Errorf("Serialize failed, flags do not match. Expected %08b, got %08b", flags, result[flagsIndex])
 	}
 }
+
+func TestTCPHeader_ToString(t *testing.T) {
+	// Create a TCPHeader with sample data
+	header := NewTcpHeader[uint32]()
+	header.sport = 12345
+	header.dport = 80
+	header.seqno = 12345678
+	header.ackno = 87654321
+	header.doff = 5
+	header.urg = true
+	header.ack = true
+	header.psh = false
+	header.rst = false
+	header.syn = true
+	header.fin = false
+	header.win = 65535
+	header.cksum = 1234
+	header.uptr = 5678
+
+	// Expected output of ToString
+	expectedToString := "TCP source port: 12345\n" +
+		"TCP dest port: 80\n" +
+		"TCP seqno: 12345678\n" +
+		"TCP ackno: 87654321\n" +
+		"TCP doff: 5\n" +
+		"Flags: urg: true ack: true psh: false rst: false syn: true fin: false\n" +
+		"TCP winsize: 65535\n" +
+		"TCP cksum: 1234\n" +
+		"TCP uptr: 5678\n"
+
+	// Expected output of Summary
+	expectedSummary := "Header(flags=SA, seqno=12345678, ack=87654321, win=65535)"
+
+	// Test ToString
+	actualToString := header.ToString()
+	if actualToString != expectedToString {
+		t.Errorf("ToString() failed. Expected:\n%s\nGot:\n%s", expectedToString, actualToString)
+	}
+
+	// Test Summary
+	actualSummary := header.Summary()
+	if actualSummary != expectedSummary {
+		t.Errorf("Summary() failed. Expected:\n%s\nGot:\n%s", expectedSummary, actualSummary)
+	}
+}

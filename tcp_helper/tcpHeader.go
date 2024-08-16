@@ -144,8 +144,38 @@ func (t *TCPHeader[T]) Serialize() string {
 	log.Printf("0x = %+v \n s = %s \n the header struct = %v", ret, fmt.Sprintf("%s", ret), t)
 	return string(ret)
 }
-func (t *TCPHeader[T]) ToString() string { return "" }
-func (t *TCPHeader[T]) Summary() string  { return "" }
+func (t *TCPHeader[T]) ToString() string {
+	return fmt.Sprintf("TCP source port: %d\n"+
+		"TCP dest port: %d\n"+
+		"TCP seqno: %d\n"+
+		"TCP ackno: %d\n"+
+		"TCP doff: %d\n"+
+		"Flags: urg: %t ack: %t psh: %t rst: %t syn: %t fin: %t\n"+
+		"TCP winsize: %d\n"+
+		"TCP cksum: %d\n"+
+		"TCP uptr: %d\n",
+		t.sport, t.dport, t.seqno, t.ackno, t.doff,
+		t.urg, t.ack, t.psh, t.rst, t.syn, t.fin,
+		t.win, t.cksum, t.uptr)
+}
+
+func (t *TCPHeader[T]) Summary() string {
+	flags := ""
+	if t.syn {
+		flags += "S"
+	}
+	if t.ack {
+		flags += "A"
+	}
+	if t.rst {
+		flags += "R"
+	}
+	if t.fin {
+		flags += "F"
+	}
+	return fmt.Sprintf("Header(flags=%s, seqno=%d, ack=%d, win=%d)",
+		flags, t.seqno, t.ackno, t.win)
+}
 func BoolToUint8(b bool) uint8 {
 	if b {
 		return 1
