@@ -1,8 +1,10 @@
 package tcp_helper
 
 import (
+	"fmt"
 	"lab/utils"
 	"lab/wrapping"
+	"log"
 	"unsafe"
 )
 
@@ -37,8 +39,8 @@ type TCPHeaderInterface[T uint32 | uint16 | uint8] interface {
 type TCPHeader[T uint32 | uint16 | uint8] struct {
 	sport T
 	dport T
-	seqno wrapping.WrappingInt32
-	ackno wrapping.WrappingInt32
+	seqno uint32
+	ackno uint32
 	doff  T
 	urg   bool
 	ack   bool
@@ -57,8 +59,8 @@ func NewTcpHeader[T uint32 | uint16 | uint8]() *TCPHeader[T] {
 	return &TCPHeader[T]{
 		sport: 0,
 		dport: 0,
-		seqno: *(wrapping.NewWrrappingInt32()),
-		ackno: *(wrapping.NewWrrappingInt32()),
+		seqno: 0,
+		ackno: 0,
 		doff:  TCPHeaderLENGTH / 4,
 		urg:   false,
 		ack:   false,
@@ -75,11 +77,16 @@ func NewTcpHeader[T uint32 | uint16 | uint8]() *TCPHeader[T] {
 func (t *TCPHeader[T]) Parse(p utils.NetParser[T]) utils.ParseResult {
 	t.sport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
 	t.dport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+
 	seqno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
 	ackno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
+
 	wrappingInt32 := wrapping.WrappingInt32{}
-	t.seqno = *(wrappingInt32.SetRawValue(uint32(seqno)))
-	t.ackno = *(wrappingInt32.SetRawValue(uint32(ackno)))
+	wrappingInt32.SetRawValue(uint32(seqno))
+	t.seqno = wrappingInt32.RawValue()
+	wrappingInt32.SetRawValue(uint32(ackno))
+
+	t.ackno = wrappingInt32.RawValue()
 	t.doff = p.ParseInt(int(unsafe.Sizeof(uint8(0)))) >> 4
 	f := p.ParseInt(int(unsafe.Sizeof(uint8(0))))
 
@@ -104,6 +111,38 @@ func (t *TCPHeader[T]) Parse(p utils.NetParser[T]) utils.ParseResult {
 	}
 	return utils.NoError
 }
-func (t *TCPHeader[T]) Serialize() string { return "" }
-func (t *TCPHeader[T]) ToString() string  { return "" }
-func (t *TCPHeader[T]) Summary() string   { return "" }
+func (t *TCPHeader[T]) Serialize() string {
+	if t.doff < 5 {
+		return "TCP header too short"
+	}
+	ret := make([]byte, 0, 4*t.doff)
+	unparser := utils.NetUnparser[T]{}
+	unparser.UnparseInt(&ret, t.sport, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, t.dport, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, T(t.seqno), int(unsafe.Sizeof(uint32(0))))
+	unparser.UnparseInt(&ret, T(t.ackno), int(unsafe.Sizeof(uint32(0))))
+	unparser.UnparseInt(&ret, t.doff<<4, int(unsafe.Sizeof(uint8(0))))
+	flags := uint8((0b00100000 * boolToUint8(t.urg)) |
+		(0b00010000 * boolToUint8(t.ack)) |
+		(0b00001000 * boolToUint8(t.psh)) |
+		(0b00000100 * boolToUint8(t.rst)) |
+		(0b00000010 * boolToUint8(t.syn)) |
+		(0b00000001 * boolToUint8(t.fin)))
+	unparser.UnparseInt(&ret, T(flags), int(unsafe.Sizeof(uint8(0))))
+	unparser.UnparseInt(&ret, t.win, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, t.cksum, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, t.uptr, int(unsafe.Sizeof(uint16(0))))
+	if T(len(ret)) > 4*t.doff {
+		ret = append(ret, make([]byte, 4*t.doff-T(len(ret)))...)
+	}
+	log.Printf("0x = %+v \n s = %s \n the header struct = %v", ret, fmt.Sprintf("%s", ret), t)
+	return string(ret)
+}
+func (t *TCPHeader[T]) ToString() string { return "" }
+func (t *TCPHeader[T]) Summary() string  { return "" }
+func boolToUint8(b bool) uint8 {
+	if b {
+		return 1
+	}
+	return 0
+}
