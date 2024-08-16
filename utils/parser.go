@@ -1,5 +1,7 @@
 package utils
 
+import "log"
+
 type ParseResult int
 
 const (
@@ -102,17 +104,17 @@ func (n *NetParser[T]) RemovePrefix(len int) {
 }
 
 type NetUnparserInterface[T uint32 | uint16 | uint8] interface {
-	UnparseInt(string, T, int) string
+	UnparseInt(*[]byte, T, int)
 }
 
 type NetUnparser[T uint32 | uint16 | uint8] struct{}
 
 var _ NetUnparserInterface[uint32] = (*NetUnparser[uint32])(nil)
 
-func (nu *NetUnparser[T]) UnparseInt(s string, val T, n int) string {
+func (nu *NetUnparser[T]) UnparseInt(ret *[]byte, val T, n int) {
 	for i := 0; i < n; i++ {
-		theByte := byte((val >> uint((n-i-1)*8)) & 0xff)
-		s += string(theByte)
+		theByte := byte((val >> ((n - i - 1) * 8)) & 0xff)
+		log.Println("theByte = ", theByte)
+		*ret = append(*ret, theByte)
 	}
-	return s
 }

@@ -62,59 +62,67 @@ func TestNetParser_RemovePrefix(t *testing.T) {
 	}
 }
 
-func TestNetUnparser_UnparseInt(t *testing.T) {
-	t.Run("Unparse uint32", func(t *testing.T) {
-		nu := NetUnparser[uint32]{}
-		val := uint32(0x12345678)
-		s := ""
+func TestUnparseInt(t *testing.T) {
+	unparser := NetUnparser[uint32]{}
 
-		result := nu.UnparseInt(s, val, 4)
+	tests := []struct {
+		name string
+		val  uint32
+		n    int
+		want []byte
+	}{
+		{
+			name: "Unparse 16-bit integer",
+			val:  0x1234,
+			n:    2,
+			want: []byte{0x12, 0x34},
+		},
+		{
+			name: "Unparse 32-bit integer",
+			val:  0x12345678,
+			n:    4,
+			want: []byte{0x12, 0x34, 0x56, 0x78},
+		},
+		{
+			name: "Unparse 8-bit integer",
+			val:  0xFF,
+			n:    1,
+			want: []byte{0xFF},
+		},
+		{
+			name: "Unparse 24-bit integer",
+			val:  0x123456,
+			n:    3,
+			want: []byte{0x12, 0x34, 0x56},
+		},
+		{
+			name: "Unparse zero value",
+			val:  0x00000000,
+			n:    4,
+			want: []byte{0x00, 0x00, 0x00, 0x00},
+		},
+		{
+			name: "Unparse maximum 16-bit integer",
+			val:  0xFFFF,
+			n:    2,
+			want: []byte{0xFF, 0xFF},
+		},
+	}
 
-		expected := "\x12\x34\x56\x78"
-		if result != expected {
-			t.Errorf("UnparseInt() = %x, want %x", result, expected)
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ret := make([]byte, 0)
+			unparser.UnparseInt(&ret, tt.val, tt.n)
 
-	t.Run("Unparse uint16", func(t *testing.T) {
-		nu := NetUnparser[uint16]{}
-		val := uint16(0x1234)
-		s := ""
+			if len(ret) != len(tt.want) {
+				t.Errorf("UnparseInt() length = %v, want %v", len(ret), len(tt.want))
+			}
 
-		result := nu.UnparseInt(s, val, 2)
-
-		expected := "\x12\x34"
-		if result != expected {
-			t.Errorf("UnparseInt() = %x, want %x", result, expected)
-		}
-	})
-
-	t.Run("Unparse uint8", func(t *testing.T) {
-		nu := NetUnparser[uint8]{}
-		val := uint8(0x12)
-		s := ""
-
-		result := nu.UnparseInt(s, val, 1)
-
-		expected := "\x12"
-		if result != expected {
-			t.Errorf("UnparseInt() = %x, want %x", result, expected)
-		}
-	})
-
-	t.Run("Unparse multiple types", func(t *testing.T) {
-		s := ""
-		nu32 := NetUnparser[uint32]{}
-		nu16 := NetUnparser[uint16]{}
-		nu8 := NetUnparser[uint8]{}
-
-		s = nu32.UnparseInt(s, uint32(0x01020304), 4)
-		s = nu16.UnparseInt(s, uint16(0x0506), 2)
-		s = nu8.UnparseInt(s, uint8(0x07), 1)
-
-		expected := "\x01\x02\x03\x04\x05\x06\x07"
-		if s != expected {
-			t.Errorf("UnparseInt() = %x, want %x", s, expected)
-		}
-	})
+			for i := range ret {
+				if ret[i] != tt.want[i] {
+					t.Errorf("UnparseInt() byte at index %d = %v, want %v", i, ret[i], tt.want[i])
+				}
+			}
+		})
+	}
 }
