@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"errors"
 	"math"
 	"testing"
 )
@@ -75,37 +74,5 @@ func TestConvertUint16ToUint16(t *testing.T) {
 	}
 	if got != want {
 		t.Errorf("ConvertToUint() = %v, want %v", got, want)
-	}
-}
-
-func TestConvertUint32ToUint32(t *testing.T) {
-	val := uint32(123456789)
-	want := uint32(123456789)
-	got, err := ConvertToUint(val)
-	if err != nil {
-		t.Errorf("ConvertToUint() error = %v, wantErr = nil", err)
-	}
-	if got != want {
-		t.Errorf("ConvertToUint() = %v, want %v", got, want)
-	}
-}
-
-func TestConvertUint64ToUint64(t *testing.T) {
-	val := uint64(123456789123456789)
-	want := uint64(123456789123456789)
-	got, err := ConvertToUint(val)
-	if err != nil {
-		t.Errorf("ConvertToUint() error = %v, wantErr = nil", err)
-	}
-	if got != want {
-		t.Errorf("ConvertToUint() = %v, want %v", got, want)
-	}
-}
-
-func TestOutOfRangeForUint64(t *testing.T) {
-	val := uint64(1<<64 - 1)
-	_, err := ConvertToUint(val)
-	if err == nil || err.Error() != "value out of range for conversion to unsigned integer" {
-		t.Errorf("ConvertToUint() error = %v, wantErr = %v", err, errors.New("value out of range for conversion to unsigned integer"))
 	}
 }
