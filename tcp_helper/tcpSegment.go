@@ -32,6 +32,10 @@ func (s *TCPSegment) Serialize(dataGramLayerCheckSum uint32) utils.BufferList {
 	return utils.BufferList{}
 }
 
+func (s *TCPSegment) SetHeader() TCPHeader[uint32] {
+
+}
+
 func (s *TCPSegment) GetHeader() TCPHeader[uint32] {
 	return s.header
 }

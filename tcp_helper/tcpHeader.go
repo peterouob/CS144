@@ -29,7 +29,7 @@ type TCPHeaderInterface[T uint32 | uint16 | uint8] interface {
 //!  | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
 //!  |       |           |G|K|H|T|N|N|                               |
 //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-//!  |           Checksum            |         Urgent Pointer        |
+//!  |           CheCksum            |         Urgent Pointer        |
 //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 //!  |                    Options                    |    Padding    |
 //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -37,106 +37,106 @@ type TCPHeaderInterface[T uint32 | uint16 | uint8] interface {
 //!  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 type TCPHeader[T uint32 | uint16 | uint8] struct {
-	sport T
-	dport T
-	seqno uint32
-	ackno uint32
-	doff  T
-	urg   bool
-	ack   bool
-	psh   bool
-	rst   bool
-	syn   bool
-	fin   bool
-	win   T
-	cksum T
-	uptr  T
+	Sport T
+	Dport T
+	Seqno uint32
+	Ackno uint32
+	Doff  T
+	Urg   bool
+	Ack   bool
+	Psh   bool
+	Rst   bool
+	Syn   bool
+	Fin   bool
+	Win   T
+	Cksum T
+	Uptr  T
 }
 
 var _ TCPHeaderInterface[uint32] = (*TCPHeader[uint32])(nil)
 
 func NewTcpHeader[T uint32 | uint16 | uint8]() *TCPHeader[T] {
 	return &TCPHeader[T]{
-		sport: 0,
-		dport: 0,
-		seqno: 0,
-		ackno: 0,
-		doff:  TCPHeaderLENGTH / 4,
-		urg:   false,
-		ack:   false,
-		psh:   false,
-		rst:   false,
-		syn:   false,
-		fin:   false,
-		win:   0,
-		cksum: 0,
-		uptr:  0,
+		Sport: 0,
+		Dport: 0,
+		Seqno: 0,
+		Ackno: 0,
+		Doff:  TCPHeaderLENGTH / 4,
+		Urg:   false,
+		Ack:   false,
+		Psh:   false,
+		Rst:   false,
+		Syn:   false,
+		Fin:   false,
+		Win:   0,
+		Cksum: 0,
+		Uptr:  0,
 	}
 }
 
 func (t *TCPHeader[T]) Parse(p utils.NetParser[T]) utils.ParseResult {
-	t.sport = p.ParseInt(int(unsafe.Sizeof(uint16(0)))) // 2
-	t.dport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.Sport = p.ParseInt(int(unsafe.Sizeof(uint16(0)))) // 2
+	t.Dport = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
 
-	seqno := p.ParseInt(int(unsafe.Sizeof(uint32(0)))) // 4
-	ackno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
+	Seqno := p.ParseInt(int(unsafe.Sizeof(uint32(0)))) // 4
+	Ackno := p.ParseInt(int(unsafe.Sizeof(uint32(0))))
 
 	wrappingInt32 := wrapping.WrappingInt32{}
-	wrappingInt32.SetRawValue(uint32(seqno))
-	t.seqno = wrappingInt32.RawValue()
-	wrappingInt32.SetRawValue(uint32(ackno))
+	wrappingInt32.SetRawValue(uint32(Seqno))
+	t.Seqno = wrappingInt32.RawValue()
+	wrappingInt32.SetRawValue(uint32(Ackno))
 
-	t.ackno = wrappingInt32.RawValue()
-	t.doff = p.ParseInt(int(unsafe.Sizeof(uint8(0)))) >> 4
+	t.Ackno = wrappingInt32.RawValue()
+	t.Doff = p.ParseInt(int(unsafe.Sizeof(uint8(0)))) >> 4
 	f := p.ParseInt(int(unsafe.Sizeof(uint8(0))))
 
-	t.urg = f&0b00100000 != 0
-	t.ack = f&0b00010000 != 0
-	t.psh = f&0b00001000 != 0
-	t.rst = f&0b00000100 != 0
-	t.syn = f&0b00000010 != 0
-	t.fin = f&0b00000001 != 0
+	t.Urg = f&0b00100000 != 0
+	t.Ack = f&0b00010000 != 0
+	t.Psh = f&0b00001000 != 0
+	t.Rst = f&0b00000100 != 0
+	t.Syn = f&0b00000010 != 0
+	t.Fin = f&0b00000001 != 0
 
-	t.win = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
-	t.cksum = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
-	t.uptr = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.Win = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.Cksum = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
+	t.Uptr = p.ParseInt(int(unsafe.Sizeof(uint16(0))))
 
-	if t.doff < 5 {
+	if t.Doff < 5 {
 		return utils.PacketTooShort
 	}
 
-	p.RemovePrefix(int(t.doff*4 - TCPHeaderLENGTH))
+	p.RemovePrefix(int(t.Doff*4 - TCPHeaderLENGTH))
 	if p.Error() {
 		return p.GetError()
 	}
 	return utils.NoError
 }
 func (t *TCPHeader[T]) Serialize() string {
-	if t.doff < 5 {
+	if t.Doff < 5 {
 		return "TCP header too short"
 	}
-	ret := make([]byte, 0, 4*t.doff)
+	ret := make([]byte, 0, 4*t.Doff)
 	unparser := utils.NetUnparser[T]{}
-	unparser.UnparseInt(&ret, t.sport, int(unsafe.Sizeof(uint16(0))))
-	unparser.UnparseInt(&ret, t.dport, int(unsafe.Sizeof(uint16(0))))
-	unparser.UnparseInt(&ret, T(t.seqno), int(unsafe.Sizeof(uint32(0))))
-	unparser.UnparseInt(&ret, T(t.ackno), int(unsafe.Sizeof(uint32(0))))
-	unparser.UnparseInt(&ret, t.doff<<4, int(unsafe.Sizeof(uint8(0))))
-	flags := (0b00100000 * BoolToUint8(t.urg)) |
-		(0b00010000 * BoolToUint8(t.ack)) |
-		(0b00001000 * BoolToUint8(t.psh)) |
-		(0b00000100 * BoolToUint8(t.rst)) |
-		(0b00000010 * BoolToUint8(t.syn)) |
-		(0b00000001 * BoolToUint8(t.fin))
+	unparser.UnparseInt(&ret, t.Sport, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, t.Dport, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, T(t.Seqno), int(unsafe.Sizeof(uint32(0))))
+	unparser.UnparseInt(&ret, T(t.Ackno), int(unsafe.Sizeof(uint32(0))))
+	unparser.UnparseInt(&ret, t.Doff<<4, int(unsafe.Sizeof(uint8(0))))
+	flags := (0b00100000 * BoolToUint8(t.Urg)) |
+		(0b00010000 * BoolToUint8(t.Ack)) |
+		(0b00001000 * BoolToUint8(t.Psh)) |
+		(0b00000100 * BoolToUint8(t.Rst)) |
+		(0b00000010 * BoolToUint8(t.Syn)) |
+		(0b00000001 * BoolToUint8(t.Fin))
 	unparser.UnparseInt(&ret, T(flags), int(unsafe.Sizeof(uint8(0))))
-	unparser.UnparseInt(&ret, t.win, int(unsafe.Sizeof(uint16(0))))
-	unparser.UnparseInt(&ret, t.cksum, int(unsafe.Sizeof(uint16(0))))
-	unparser.UnparseInt(&ret, t.uptr, int(unsafe.Sizeof(uint16(0))))
-	//ret = append(ret, make([]byte, 4*t.doff-T(len(ret)))...)
-	if cap(ret) >= int(t.doff<<4) {
-		ret = ret[:4*t.doff]
+	unparser.UnparseInt(&ret, t.Win, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, t.Cksum, int(unsafe.Sizeof(uint16(0))))
+	unparser.UnparseInt(&ret, t.Uptr, int(unsafe.Sizeof(uint16(0))))
+	//ret = append(ret, make([]byte, 4*t.Doff-T(len(ret)))...)
+	if cap(ret) >= int(t.Doff<<4) {
+		ret = ret[:4*t.Doff]
 	} else {
-		newRet := make([]byte, 4*t.doff)
+		newRet := make([]byte, 4*t.Doff)
 		copy(newRet, ret)
 		ret = newRet
 	}
@@ -147,35 +147,36 @@ func (t *TCPHeader[T]) Serialize() string {
 func (t *TCPHeader[T]) ToString() string {
 	return fmt.Sprintf("TCP source port: %d\n"+
 		"TCP dest port: %d\n"+
-		"TCP seqno: %d\n"+
-		"TCP ackno: %d\n"+
-		"TCP doff: %d\n"+
-		"Flags: urg: %t ack: %t psh: %t rst: %t syn: %t fin: %t\n"+
-		"TCP winsize: %d\n"+
-		"TCP cksum: %d\n"+
-		"TCP uptr: %d\n",
-		t.sport, t.dport, t.seqno, t.ackno, t.doff,
-		t.urg, t.ack, t.psh, t.rst, t.syn, t.fin,
-		t.win, t.cksum, t.uptr)
+		"TCP Seqno: %d\n"+
+		"TCP Ackno: %d\n"+
+		"TCP Doff: %d\n"+
+		"Flags: Urg: %t Ack: %t Psh: %t Rst: %t Syn: %t Fin: %t\n"+
+		"TCP Winsize: %d\n"+
+		"TCP Cksum: %d\n"+
+		"TCP Uptr: %d\n",
+		t.Sport, t.Dport, t.Seqno, t.Ackno, t.Doff,
+		t.Urg, t.Ack, t.Psh, t.Rst, t.Syn, t.Fin,
+		t.Win, t.Cksum, t.Uptr)
 }
 
 func (t *TCPHeader[T]) Summary() string {
 	flags := ""
-	if t.syn {
+	if t.Syn {
 		flags += "S"
 	}
-	if t.ack {
+	if t.Ack {
 		flags += "A"
 	}
-	if t.rst {
+	if t.Rst {
 		flags += "R"
 	}
-	if t.fin {
+	if t.Fin {
 		flags += "F"
 	}
-	return fmt.Sprintf("Header(flags=%s, seqno=%d, ack=%d, win=%d)",
-		flags, t.seqno, t.ackno, t.win)
+	return fmt.Sprintf("Header(flags=%s, Seqno=%d, Ack=%d, Win=%d)",
+		flags, t.Seqno, t.Ackno, t.Win)
 }
+
 func BoolToUint8(b bool) uint8 {
 	if b {
 		return 1
