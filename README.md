@@ -1,6 +1,6 @@
 ## TCP
 ### Stream
-### StreamAssembler
+### StreamAssembler -> OK
 ### TCP Receiver
 - [ ] tcp_segment
   - [ ] utils
@@ -9,3 +9,4 @@
     - [x] parser
     - [x] buffer
     - [x] wrappingIntergers
+### TCP Sender
