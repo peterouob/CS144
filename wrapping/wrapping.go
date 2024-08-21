@@ -1,7 +1,5 @@
 package wrapping
 
-import "log"
-
 type WrappingInt32Interface interface {
 	SetRawValue(uint32) *WrappingInt32
 	RawValue() uint32
@@ -21,7 +19,6 @@ func NewWrrappingInt32(v int) *WrappingInt32 {
 
 func (w *WrappingInt32) SetRawValue(v uint32) *WrappingInt32 {
 	w.rawValue = v
-	log.Println("raw value =", w.rawValue)
 	return w
 }
 func (w *WrappingInt32) RawValue() uint32 { return w.rawValue }
@@ -30,13 +27,10 @@ func (w *WrappingInt32) Wrap(n uint64, isn WrappingInt32) WrappingInt32 {
 }
 func (w *WrappingInt32) UnWrap(n, isn WrappingInt32, checkPoint uint64) uint64 {
 	INT32Range := uint64(1 << 32)
-	//log.Printf("INT32Range :%d, 1 << 32 :%d", INT32Range, 1<<32)
 	offset := uint64(n.rawValue - isn.rawValue)
-	//log.Printf("n.rawValue =%d,isn.rawValue =%d,offset = %d", n.rawValue, isn.rawValue, offset)
 	if checkPoint > offset {
 		realCheckPoint := (checkPoint - offset) + (INT32Range >> 1)
 		var wrapNum = realCheckPoint / INT32Range
-		//	log.Printf("reaCheckPoint =%d,INT32Range =%d,wrapNum =%d", realCheckPoint, INT32Range, wrapNum)
 		return wrapNum*INT32Range + offset
 	}
 	return offset

@@ -39,39 +39,39 @@ func NewStreamReassembler(capacity int, output *stream.Stream) *StreamReassemble
 
 func (sr *StreamReassembler) PushSubString(data string, idx int, eof bool) {
 	if len(sr.unassembleStrs) == 0 {
-		log.Printf("The unassembleStrs have been clear ...\n")
+		log.Printf("The unassembleStrs have been nil ...\n")
 		return
 	}
 	pos, f := MapFindUpperBoundIdx(sr.unassembleStrs, idx)
-	log.Printf("pos: %d ,got = %v \n", pos, f)
+	//log.Printf("pos: %d ,got = %v \n", pos, f)
 	if !f {
-		log.Printf("Error to find the target upperbound :%d\n", idx)
+		//log.Printf("Error to find the target upperbound :%d\n", idx)
 		return
 	}
 	if pos != 0 {
 		pos -= 1
 	}
 	newIdx := idx
-	log.Println("new idx before change", newIdx)
+	//log.Println("new idx before change", newIdx)
 	if f && pos <= idx {
 		upIdx := pos
-		log.Println("upIdx =", upIdx)
+		//log.Println("upIdx =", upIdx)
 		if idx < upIdx+len(sr.unassembleStrs[upIdx]) {
 			newIdx = upIdx + len(sr.unassembleStrs[upIdx])
-			log.Println("new idx =", newIdx)
+			//log.Println("new idx =", newIdx)
 		} else {
-			log.Println(upIdx + len(sr.unassembleStrs[upIdx]))
+			//log.Println(upIdx + len(sr.unassembleStrs[upIdx]))
 		}
 	} else if idx < sr.nextAssembledIdx {
 		newIdx = sr.nextAssembledIdx
-		log.Println("new idx =", newIdx)
+		//log.Println("new idx =", newIdx)
 	}
 
-	log.Println("new Idx after change", newIdx)
+	//log.Println("new Idx after change", newIdx)
 
 	dataStartPos := newIdx - idx
 	dataSize := len(data) - dataStartPos
-	log.Printf("dataStartPos = %d,dataSize = %d \n", dataStartPos, dataSize)
+	//log.Printf("dataStartPos = %d,dataSize = %d \n", dataStartPos, dataSize)
 	for f && idx <= pos {
 		pos += 1
 		dataEndSize := newIdx + dataSize
@@ -97,22 +97,22 @@ func (sr *StreamReassembler) PushSubString(data string, idx int, eof bool) {
 	}
 	if dataSize > 0 {
 		newData := data[:dataStartPos+dataSize]
-		log.Printf("new data= %s,dataStartPos=%d,dataSize=%d\n", newData, dataStartPos, dataSize)
+		//log.Printf("new data= %s,dataStartPos=%d,dataSize=%d\n", newData, dataStartPos, dataSize)
 		if newIdx == sr.nextAssembledIdx {
 			writeByte := sr.outPut.Write(newData)
-			log.Println("write Byte", writeByte)
+			//log.Println("write Byte", writeByte)
 			sr.nextAssembledIdx += writeByte
 			if writeByte < len(newData) {
 				dataToStore := newData[writeByte : len(newData)-writeByte]
 				sr.unassebledBytesNum += len(dataToStore)
 				sr.unassembleStrs[sr.nextAssembledIdx] = dataToStore
-				log.Println("unassemble string next idx", sr.unassembleStrs[sr.nextAssembledIdx])
+				//log.Println("unassemble string next idx", sr.unassembleStrs[sr.nextAssembledIdx])
 			}
 		} else {
 			dataToStore := newData[0:len(newData)]
 			sr.unassebledBytesNum += len(dataToStore)
 			sr.unassembleStrs[newIdx] = dataToStore
-			log.Println(sr.unassembleStrs[newIdx])
+			//log.Println(sr.unassembleStrs[newIdx])
 		}
 	}
 
@@ -145,7 +145,7 @@ func (sr *StreamReassembler) PushSubString(data string, idx int, eof bool) {
 func (sr *StreamReassembler) SetunassembleStrs(str ...string) {
 	for i := 0; i < len(str); i++ {
 		sr.unassembleStrs[i] = str[i]
-		log.Printf("set the unassembleStrs = %s,i = %d\n", str[i], i)
+		//log.Printf("set the unassembleStrs = %s,i = %d\n", str[i], i)
 	}
 }
 func (sr *StreamReassembler) GetTheIdxWithPayload(str string) int {

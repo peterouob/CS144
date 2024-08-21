@@ -73,3 +73,49 @@ func TestTcpReceiver_SegmentReceived(t *testing.T) {
 		t.Errorf("need =%s,got =%s", "hi", outputStream)
 	}
 }
+
+func TestTcpReceiverWithPayload(t *testing.T) {
+	isn := wrapping.WrappingInt32{}
+	isn.SetRawValue(100) // Starting ISN
+
+	// Create a mock Stream and StreamReassembler
+	stream := stream.NewStream(stream.Deque{}, 1024, 0, 0, false, false)
+	reassembler := streamReassembler.NewStreamReassembler(1024, stream)
+
+	// Initialize the TcpReceiver
+	receiver := &TcpReceiver{
+		isn:         isn,
+		setSynFlag:  false, // Start with SYN not set
+		reassembler: *reassembler,
+		capacity:    1024,
+	}
+
+	// Prepare a TCP Segment with SYN flag and initial sequence number
+	header := tcp_helper.NewTcpHeader[uint32]()
+	header.Syn = false // Not a SYN, regular data
+	header.Seqno = 100 // Sequence number following the SYN
+
+	segment := tcp_helper.NewTCPSegment(*header)
+
+	payload := stream
+	payload.Write("hi")
+	segment.SetPaylaod(*payload)
+	reassembler.SetunassembleStrs("hi")
+	// Call SegmentReceived to simulate receiving a data segment
+	receiver.SegmentReceived(*segment)
+	r := receiver.reassembler
+	put := r.StreamOut()
+	p := put.Read(2)
+
+	if p != "hi" {
+		t.Errorf("need =%s,got =%s", "hi", p)
+	}
+
+	// Check if the payload is correctly reassembled
+	rc := receiver.SegmentOut()
+	outputStream := rc.Read(2)
+
+	if outputStream != "hi" {
+		t.Errorf("need =%s,got =%s", "hi", outputStream)
+	}
+}
