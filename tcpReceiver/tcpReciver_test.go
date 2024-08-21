@@ -47,26 +47,29 @@ func TestTcpReceiver_SegmentReceived(t *testing.T) {
 		t.Errorf("Incorrect Ackno: got %v, want %v", ackno.RawValue(), expectedAckno.RawValue())
 	}
 
-	//// Add a new TCP segment with payload
-	//header.Syn = false // Not a SYN, regular data
-	//header.Seqno = 101 // Sequence number following the SYN
-	//payload := stream
-	//payload.Write("h")
-	//payload.Write("i")
-	//segment.SetPaylaod(*payload)
-	//
-	//// Call SegmentReceived to simulate receiving a data segment
-	//receiver.SegmentReceived(*segment)
-	//
-	//// Check if the payload is correctly reassembled
-	//outputStream := receiver.SegmentOut()
-	//if outputStream.BytesWritten() != 2 {
-	//	t.Errorf("Expected 2 bytes written, got %d", outputStream.BytesWritten())
-	//}
-	//
-	//// Check if the received data matches the payload
-	//data := outputStream.Read(2)
-	//if data != "hi" {
-	//	t.Errorf("Expected payload 'hi', got '%s'", data)
-	//}
+	// Add a new TCP segment with payload
+	header.Syn = false // Not a SYN, regular data
+	header.Seqno = 100 // Sequence number following the SYN
+
+	payload := stream
+	payload.Write("hi")
+	segment.SetPaylaod(*payload)
+	reassembler.SetunassembleStrs("hi", "h")
+	// Call SegmentReceived to simulate receiving a data segment
+	receiver.SegmentReceived(*segment)
+	r := receiver.reassembler
+	put := r.StreamOut()
+	p := put.Read(2)
+
+	if p != "hi" {
+		t.Errorf("need =%s,got =%s", "hi", p)
+	}
+
+	// Check if the payload is correctly reassembled
+	rc := receiver.SegmentOut()
+	outputStream := rc.Read(2)
+
+	if outputStream != "hi" {
+		t.Errorf("need =%s,got =%s", "hi", outputStream)
+	}
 }

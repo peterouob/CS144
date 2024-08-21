@@ -209,3 +209,21 @@ func TestStreamReassembler_Normal(t *testing.T) {
 		t.Errorf("Expected unassembled bytes to be 0 but got %d", reassembler.unassebledBytesNum)
 	}
 }
+
+func TestPushSubStringNormal(t *testing.T) {
+	// Initialize the StreamReassembler
+	out := stream.NewStream(stream.Deque{}, 40, 0, 0, false, false)
+	sr := NewStreamReassembler(1024, out)
+	// Mock data to push
+	data := "hello world"
+	sr.SetunassembleStrs(data, "hi")
+	id := sr.GetTheIdxWithPayload(data)
+	// Push substring
+	sr.PushSubString(data, id, false)
+
+	// Check the output buffer to see if data was written
+	assembled := sr.outPut.Read(len(data)) // assuming outPut is accessible for testing
+	if assembled != data {
+		t.Errorf("need=%s,got=%s", data, assembled)
+	}
+}

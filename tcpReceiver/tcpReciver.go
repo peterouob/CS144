@@ -5,6 +5,7 @@ import (
 	"lab/streamReassembler"
 	"lab/tcp_helper"
 	"lab/wrapping"
+	"log"
 )
 
 type ReceiverInterface interface {
@@ -60,8 +61,13 @@ func (rcv *TcpReceiver) SegmentReceived(seg tcp_helper.TCPSegment) {
 
 	wrap := wrapping.WrappingInt32{}
 	currAbsSeqno := wrap.UnWrap(*wrap.SetRawValue(header.Seqno), rcv.isn, uint64(absAckno))
-
+	log.Println("currAbsSeqno =", currAbsSeqno)
 	streamIndex := currAbsSeqno - 1 + checkSyn(header.Syn)
+
+	if streamIndex > uint64(int(^uint(0)>>1)) {
+		log.Fatalf("streamIndex overflow: %d", streamIndex)
+	}
+
 	payload := seg.GetPayload()
 	rcv.reassembler.PushSubString(payload.Copy(), int(streamIndex), header.Fin)
 }

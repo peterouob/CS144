@@ -9,6 +9,7 @@ import (
 
 type StreamReassemblerInterface interface {
 	PushSubString(string, int, bool)
+	SetunassembleStrs(...string)
 	StreamOut() stream.Stream
 	UnassembledBytes() int
 	Empty() bool
@@ -37,10 +38,15 @@ func NewStreamReassembler(capacity int, output *stream.Stream) *StreamReassemble
 }
 
 func (sr *StreamReassembler) PushSubString(data string, idx int, eof bool) {
+	if len(sr.unassembleStrs) == 0 {
+		log.Printf("The unassembleStrs have been clear ...\n")
+		return
+	}
 	pos, f := MapFindUpperBoundIdx(sr.unassembleStrs, idx)
 	log.Printf("pos: %d ,got = %v \n", pos, f)
 	if !f {
 		log.Printf("Error to find the target upperbound :%d\n", idx)
+		return
 	}
 	if pos != 0 {
 		pos -= 1
@@ -136,10 +142,27 @@ func (sr *StreamReassembler) PushSubString(data string, idx int, eof bool) {
 		sr.outPut.EndInput()
 	}
 }
-
-func (sr *StreamReassembler) StreamOut() stream.Stream { return stream.Stream{} }
-func (sr *StreamReassembler) UnassembledBytes() int    { return sr.unassebledBytesNum }
-func (sr *StreamReassembler) Empty() bool              { return sr.unassebledBytesNum == 0 }
+func (sr *StreamReassembler) SetunassembleStrs(str ...string) {
+	for i := 0; i < len(str); i++ {
+		sr.unassembleStrs[i] = str[i]
+		log.Printf("set the unassembleStrs = %s,i = %d\n", str[i], i)
+	}
+}
+func (sr *StreamReassembler) GetTheIdxWithPayload(str string) int {
+	idx := 0
+	for i := 0; i < len(sr.unassembleStrs); i++ {
+		if sr.unassembleStrs[i] == str {
+			idx = i
+			return idx
+		}
+	}
+	return -1
+}
+func (sr *StreamReassembler) StreamOut() stream.Stream {
+	return *sr.outPut
+}
+func (sr *StreamReassembler) UnassembledBytes() int { return sr.unassebledBytesNum }
+func (sr *StreamReassembler) Empty() bool           { return sr.unassebledBytesNum == 0 }
 func MapFindUpperBoundIdx(target map[int]string, idx int) (int, bool) {
 	if idx < 0 {
 		return -1, false
