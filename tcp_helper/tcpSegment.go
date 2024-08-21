@@ -1,6 +1,9 @@
 package tcp_helper
 
-import "lab/utils"
+import (
+	"lab/stream"
+	"lab/utils"
+)
 
 type TCPSegmentInterface interface {
 	Parse(buffer utils.Buffer, dataGramLayerCheckSum uint32) utils.ParseResult
@@ -17,9 +20,9 @@ type TCPSegment struct {
 
 var _ TCPSegmentInterface = (*TCPSegment)(nil)
 
-func NewTCPSegment() *TCPSegment {
+func NewTCPSegment(header TCPHeader[uint32]) *TCPSegment {
 	return &TCPSegment{
-		header:  TCPHeader[uint32]{},
+		header:  header,
 		payload: utils.Buffer{},
 	}
 }
@@ -32,8 +35,9 @@ func (s *TCPSegment) Serialize(dataGramLayerCheckSum uint32) utils.BufferList {
 	return utils.BufferList{}
 }
 
-func (s *TCPSegment) SetHeader() TCPHeader[uint32] {
-
+func (s *TCPSegment) SetPaylaod(stream stream.Stream) {
+	b := utils.ConvertStreamToBuffer(stream, stream.BufferSize())
+	s.payload = *b
 }
 
 func (s *TCPSegment) GetHeader() TCPHeader[uint32] {

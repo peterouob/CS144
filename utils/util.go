@@ -1,5 +1,7 @@
 package utils
 
+import "lab/stream"
+
 type InternetChecksumInterface interface {
 	Add([]byte)
 	Value() uint16
@@ -27,4 +29,8 @@ func (in *InternetChecksum) Value() uint16 {
 		ret = (ret >> 16) + (ret & 0xffff)
 	}
 	return ^uint16(ret)
+}
+
+func ConvertStreamToBuffer(stream stream.Stream, l int) *Buffer {
+	return NewBuffer(stream.Read(l))
 }
