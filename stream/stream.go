@@ -55,7 +55,7 @@ func (d *Deque) StringItem() []string {
 	return tmp
 }
 
-func newDeque(length int) *Deque {
+func NewDeque(length int) *Deque {
 	return &Deque{
 		item: make([]byte, length),
 	}
@@ -89,14 +89,14 @@ type Stream struct {
 
 var _ StreamInterface = (*Stream)(nil)
 
-func NewStream(q Deque, capacitySize, writtenSize, readSize int, endInput, error bool) *Stream {
+func NewStream(q Deque, capacitySize, writtenSize, readSize int) *Stream {
 	return &Stream{
 		q:            q,
 		capacitySize: capacitySize,
 		writtenSize:  writtenSize,
 		readSize:     readSize,
-		endInput:     endInput,
-		error:        error,
+		endInput:     false,
+		error:        false,
 	}
 }
 
@@ -124,6 +124,17 @@ func (stream *Stream) PopOutPut(length int) {
 	popSize := min(length, len(stream.q.item))
 	stream.readSize += length
 	for i := 0; i < popSize; i++ {
+		stream.q.PopFront()
+	}
+}
+
+func (stream *Stream) ReadAll() string {
+	data := fmt.Sprintf("%s", stream.q.item[:])
+	return data
+}
+
+func (stream *Stream) Flush() {
+	for i := len(stream.q.item); i >= 0; i-- {
 		stream.q.PopFront()
 	}
 }

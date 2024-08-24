@@ -69,7 +69,7 @@ func (rcv *TcpReceiver) SegmentReceived(seg tcp_helper.TCPSegment) {
 	}
 
 	payload := seg.GetPayload()
-	rcv.reassembler.PushSubString(payload.Copy(), int(streamIndex), header.Fin)
+	rcv.reassembler.PushsubString(payload.Copy(), int(streamIndex), header.Fin)
 }
 
 func (rcv *TcpReceiver) SegmentOut() stream.Stream {

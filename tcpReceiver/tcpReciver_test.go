@@ -14,7 +14,8 @@ func TestTcpReceiver_SegmentReceived(t *testing.T) {
 	isn.SetRawValue(100) // Starting ISN
 
 	// Create a mock Stream and StreamReassembler
-	stream := stream.NewStream(stream.Deque{}, 1024, 0, 0, false, false)
+	q := stream.NewDeque(2048)
+	stream := stream.NewStream(*q, 1024, 0, 0)
 	reassembler := streamReassembler.NewStreamReassembler(1024, stream)
 
 	// Initialize the TcpReceiver
@@ -79,7 +80,8 @@ func TestTcpReceiverWithPayload(t *testing.T) {
 	isn.SetRawValue(100) // Starting ISN
 
 	// Create a mock Stream and StreamReassembler
-	stream := stream.NewStream(stream.Deque{}, 1024, 0, 0, false, false)
+	q := stream.NewDeque(2048)
+	stream := stream.NewStream(*q, 1024, 0, 0)
 	reassembler := streamReassembler.NewStreamReassembler(1024, stream)
 
 	// Initialize the TcpReceiver
