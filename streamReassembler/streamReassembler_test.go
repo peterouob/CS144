@@ -21,22 +21,65 @@ func TestPush(t *testing.T) {
 	}
 }
 
-func TestPushOverlap(t *testing.T) {
+func TestPushNotOverlap(t *testing.T) {
 	q := stream.NewDeque(len("HelloWorld"))
 	out := stream.NewStream(*q, 40, 10, 10)
-	reassembler := NewStreamReassembler(20, out)
+	size := <-stream.Cap
+	reassembler := NewStreamReassembler(size, out)
 
-	// Push the first part
 	reassembler.PushsubString("Hello", 0, false)
 	expect := "Hello"
 	if got := reassembler.outPut.ReadAll(); got != expect {
 		t.Errorf("PushSubString() = %s, want = %s", got, expect)
 	}
 
-	// Push an overlapping part
-	reassembler.PushsubString("World", 4, false)
-	expect = "HelWorld"
+	reassembler.PushsubString("world", 5, false)
+	expect = "Helloworld"
 	if got := reassembler.outPut.ReadAll(); got != expect {
 		t.Errorf("PushSubString() = %s, want = %s", got, expect)
+	}
+}
+
+func TestPushOverlap(t *testing.T) {
+	q := stream.NewDeque(len("HelloWorld"))
+	out := stream.NewStream(*q, 40, 10, 10)
+	size := <-stream.Cap
+	reassembler := NewStreamReassembler(size, out)
+
+	reassembler.PushsubString("Hello", 0, false)
+	expect := "Hello"
+	if got := reassembler.outPut.ReadAll(); got != expect {
+		t.Errorf("PushSubString() = %s, want = %s", got, expect)
+	}
+
+	reassembler.PushsubString("world", 20, false)
+	expect = "Hellold"
+	if got := reassembler.outPut.ReadAll(); got != expect {
+		t.Errorf("PushSubString() = %s, want = %s", got, expect)
+	}
+}
+
+func TestOverCapacitySize(t *testing.T) {
+	q := stream.NewDeque(len("HelloWorld"))
+	out := stream.NewStream(*q, 40, 10, 10)
+	size := <-stream.Cap
+	reassembler := NewStreamReassembler(size, out)
+
+	reassembler.PushsubString("Hello", 41, false)
+	expect := ""
+	if got := reassembler.outPut.ReadAll(); got != expect {
+		t.Errorf("PushSubString() = %s, want = %s", got, expect)
+	}
+}
+
+func TestEOF(t *testing.T) {
+	q := stream.NewDeque(len("HelloWorld"))
+	out := stream.NewStream(*q, 40, 10, 10)
+	size := <-stream.Cap
+	reassembler := NewStreamReassembler(size, out)
+	reassembler.PushsubString("Hello", 0, true)
+	expect := ""
+	if got := reassembler.outPut.ReadAll(); got != expect && out.BufferEmpty() != true {
+		t.Errorf("PushSubString() = %s, want = %s && Buffer want =%v,got = %v", got, expect, true, out.BufferEmpty())
 	}
 }

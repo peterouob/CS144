@@ -55,7 +55,6 @@ func TestTcpReceiver_SegmentReceived(t *testing.T) {
 	payload := stream
 	payload.Write("hi")
 	segment.SetPaylaod(*payload)
-	reassembler.SetunassembleStrs("hi", "h")
 	// Call SegmentReceived to simulate receiving a data segment
 	receiver.SegmentReceived(*segment)
 	r := receiver.reassembler
@@ -101,23 +100,24 @@ func TestTcpReceiverWithPayload(t *testing.T) {
 
 	payload := stream
 	payload.Write("hi")
+	payload.Write("hello")
+	payload.Write("world")
 	segment.SetPaylaod(*payload)
-	reassembler.SetunassembleStrs("hi")
 	// Call SegmentReceived to simulate receiving a data segment
 	receiver.SegmentReceived(*segment)
 	r := receiver.reassembler
 	put := r.StreamOut()
-	p := put.Read(2)
+	p := put.Read(12)
 
-	if p != "hi" {
+	if p != "hihelloworld" {
 		t.Errorf("need =%s,got =%s", "hi", p)
 	}
 
 	// Check if the payload is correctly reassembled
 	rc := receiver.SegmentOut()
-	outputStream := rc.Read(2)
+	outputStream := rc.Read(12)
 
-	if outputStream != "hi" {
+	if outputStream != "hihelloworld" {
 		t.Errorf("need =%s,got =%s", "hi", outputStream)
 	}
 }

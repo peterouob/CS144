@@ -2,7 +2,6 @@ package streamReassembler
 
 import (
 	"lab/stream"
-	"log"
 	"strings"
 )
 
@@ -49,11 +48,16 @@ func (sr *StreamReassembler) Empty() bool           { return len(sr.buffer) == 0
 func (sr *StreamReassembler) PushsubString(data string, idx int, eof bool) {
 	//sr.outPut.Flush()
 	from := 0
+
+	if idx > sr.capacity || eof == true {
+		sr.buffer = nil
+		return
+	}
+
 	if idx < sr.startIdx {
 		from = sr.startIdx - idx
 	}
 	size := min(len(data), sr.capacity-sr.outPut.BufferSize()-idx+sr.startIdx)
-	log.Println(size, len(data), sr.capacity-sr.outPut.BufferSize()-idx+sr.startIdx)
 	for i := from; i < size; i++ {
 		j := (i + sr.start + idx - sr.startIdx) % sr.capacity
 		sr.buffer[j] = data[i]
