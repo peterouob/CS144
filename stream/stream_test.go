@@ -6,7 +6,7 @@ import (
 )
 
 func TestDeque_PushBack(t *testing.T) {
-	dq := newDeque(10)
+	dq := NewDeque(10)
 	dq.PushBack('1')
 	dq.PushBack('2')
 	dq.PushBack('3')
@@ -17,7 +17,7 @@ func TestDeque_PushBack(t *testing.T) {
 }
 
 func TestDeque_PushFront(t *testing.T) {
-	dq := newDeque(10)
+	dq := NewDeque(10)
 	dq.PushFront('1')
 	dq.PushFront('2')
 	dq.PushFront('3')
@@ -28,7 +28,7 @@ func TestDeque_PushFront(t *testing.T) {
 }
 
 func TestDeque_PopBack(t *testing.T) {
-	dq := newDeque(10)
+	dq := NewDeque(10)
 	dq.PushBack('1')
 	dq.PushBack('2')
 	dq.PushBack('3')
@@ -42,7 +42,7 @@ func TestDeque_PopBack(t *testing.T) {
 }
 
 func TestDeque_PopFront(t *testing.T) {
-	dq := newDeque(10)
+	dq := NewDeque(10)
 	dq.PushFront('1')
 	dq.PushFront('2')
 	dq.PushFront('3')
@@ -57,7 +57,7 @@ func TestDeque_PopFront(t *testing.T) {
 
 func TestNewStream(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 
 	if stream.capacitySize != 10 {
 		t.Errorf("Expected capacitySize to be 10, got %d", stream.capacitySize)
@@ -82,7 +82,7 @@ func TestNewStream(t *testing.T) {
 
 func TestWrite(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 	data := "hello"
 
 	n := stream.Write(data)
@@ -102,7 +102,7 @@ func TestWrite(t *testing.T) {
 
 func TestPeekOutput(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 	data := "hello"
 	stream.Write(data)
 
@@ -116,7 +116,7 @@ func TestPeekOutput(t *testing.T) {
 
 func TestRead(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 	data := "hello"
 	stream.Write(data)
 
@@ -139,7 +139,7 @@ func TestRead(t *testing.T) {
 // Test sequential write and read
 func TestSequentialWriteAndRead(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 	data := "hello"
 
 	n := stream.Write(data)
@@ -156,7 +156,7 @@ func TestSequentialWriteAndRead(t *testing.T) {
 // Test end input and EOF detection
 func TestEndInputAndEOF(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 	data := "hello"
 
 	stream.Write(data)
@@ -179,7 +179,7 @@ func TestEndInputAndEOF(t *testing.T) {
 // Test flow control
 func TestFlowControl(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 5, 0, 0, false, false)
+	stream := NewStream(q, 5, 0, 0)
 	data := "hello"
 
 	n := stream.Write(data)
@@ -202,7 +202,7 @@ func TestFlowControl(t *testing.T) {
 // Test long byte stream
 func TestLongByteStream(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 1, 0, 0, false, false)
+	stream := NewStream(q, 1, 0, 0)
 	data := "hello"
 
 	n := stream.Write(data)
@@ -220,7 +220,7 @@ func TestLongByteStream(t *testing.T) {
 // Test the SetError and Errors functions
 func TestSetError(t *testing.T) {
 	q := Deque{}
-	stream := NewStream(q, 10, 0, 0, false, false)
+	stream := NewStream(q, 10, 0, 0)
 	stream.SetError()
 
 	if !stream.Errors() {
